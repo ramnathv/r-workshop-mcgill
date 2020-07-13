@@ -1,0 +1,166 @@
+---
+title: Baby Names
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+## BabyNames
+
+### Get Data
+
+```{r}
+bnames = read_csv('../../data/babynames.csv.gz')
+bnames
+```
+
+## Top Female Names
+
+1. [x] Filter the data for sex = "F"
+       Filter the data for year: year >= 2010 and year <= 2020
+2. [x] Group By "name"
+3. [x] For each name, sum all values of n.
+4. [x] Arrange the names in descending order of births.
+5. [x] Extract the top 10 names.
+6. [x] Make a barplot of the top names.
+
+```{r}
+bnames %>% 
+  filter(sex == "F") %>% 
+  group_by(name) %>% 
+  summarize(
+    nb_births = sum(n)
+  ) %>% 
+  arrange(desc(nb_births)) %>% 
+  head(10) %>% 
+  mutate(name = forcats::fct_reorder(name, nb_births)) %>% 
+  ggplot(aes(y = name, x = nb_births)) +
+  geom_col()
+```
+
+
+```{r}
+bnames %>% 
+  filter(sex == "F") %>% 
+  group_by(name) %>% 
+  summarize(
+    nb_births = sum(n)
+  ) %>% 
+  arrange(desc(nb_births)) %>% 
+  head(10) %>% 
+  mutate(name = forcats::fct_reorder(name, nb_births)) %>% 
+  ggplot(aes(y = name, x = nb_births)) +
+  geom_col()
+```
+
+
+1. [x] Filter the data for sex = "F"
+       Filter the data for year: year >= 1980
+2. [x] Add a new variable called decade
+2. [x] Group By "decade" and "name"
+3. [x] For each name, sum all values of n.
+4. [x] Arrange the names in descending order of births.
+5. [x] Extract the top 10 names for each decade.
+6. [ ] Make a barplot of the top names by decade
+
+```{r}
+# 2014 -> 2010
+round(2014/10)*10
+```
+
+
+```{r}
+bnames %>% 
+  filter(year > 1980) %>% 
+  filter(sex == "F") %>% 
+  mutate(decade = round(year/10)*10) %>% 
+  group_by(decade, name) %>% 
+  summarize(
+    nb_births = sum(n)
+  ) %>% 
+  arrange(desc(nb_births)) %>% 
+  top_n(10, nb_births) %>% 
+  mutate(name = forcats::fct_reorder(name, nb_births)) %>% 
+  ggplot(aes(y = name, x = nb_births)) +
+  geom_col() +
+  facet_wrap(~ decade, scales = 'free_y')
+```
+
+## Shiny
+
+```{r}
+library(shiny)
+options("shiny.launch.browser" = rstudioapi::viewer)
+ui <- fluidPage(
+  # [x] Add a text input to let the user enter their name
+  textInput('name', 'Enter name'),
+  # Add a text output to display a greeting
+  textOutput('greeting')
+)
+
+server <- function(input, output, session){
+  # Render the greeting
+  output$greeting <- renderText({
+    paste("Hello, ", input$name)
+  })
+}
+
+shinyApp(ui, server)
+```
+
+```{r}
+output$plot_10_names = 
+```
+
+
+## App
+
+1. Input: User selects
+   - starting year (1980)
+   - sex ('M' or 'F')
+2. Output:
+   - top 10 names
+   
+```{r}
+ui <- fluidPage(
+  # Add an input to select starting year
+  sliderInput('year_start', 'Enter starting year', value = 1900, 
+      min = 1900, max = 2019, animate = TRUE, step = 10
+  ),
+  # Add an input to select sex
+  selectInput('sex', 'Select sex', choices = c('M', 'F')),
+  # Add an output to display a plot
+  plotOutput('plot_top_10_names')
+)
+
+server <- function(input, output, session){
+  output$plot_top_10_names = renderPlot({
+    year_selected = input$year_start
+    sex_selected = input$sex
+    bnames %>% 
+      filter(year > year_selected) %>% 
+      filter(sex == sex_selected) %>% 
+      group_by(name) %>% 
+      summarize(
+        nb_births = sum(n)
+      ) %>% 
+      arrange(desc(nb_births)) %>% 
+      head(10) %>% 
+      mutate(name = forcats::fct_reorder(name, nb_births)) %>% 
+      ggplot(aes(y = name, x = nb_births)) +
+      geom_col()
+  })
+}
+
+shinyApp(ui, server)
+```
+
+
+
+1. Separate by 10 year periods and most common name?
+2. Average length of a name by year?
+3. How many babies have name starting with 'S'?
+4. Most common unisex names.
+4. What will be the most popular names 10 years in the future?

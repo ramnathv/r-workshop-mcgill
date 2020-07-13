@@ -1,0 +1,291 @@
+---
+title: "Lecture 1 - Introduction"
+---
+
+```{r setup}
+library(tidyverse)
+library(wordcloud2)
+library(Hmisc)
+```
+
+
+In this session, we will cover the basics of the data science workflow in R, and
+go through a live demonstration taking raw data, analyzing it, visualizing it,
+and building a dashboard. The goal of this lecture is to give you a sneak
+preview of what you will be capable of doing once you complete this course!
+
+## Introduction to Baby Names Data
+
+> What's in a name? That which we call a rose, by any other name would smell as sweet.
+
+We will explore a rich dataset of first names of babies born in the US, that spans a period of more than 100 years! This surprisingly simple dataset can help us uncover so many interesting stories, and that is exactly what we are going to be doing. 
+
+Let us start by reading the data.
+
+```{r}
+suppressMessages(library(tidyverse))
+bnames = read_csv('../../data/babynames.csv.gz')
+head(bnames)
+```
+
+## Wordcloud
+
+```{r}
+library(wordcloud2)
+bnames_summary %>% 
+  select(word = name, freq = nb_births) %>% 
+  wordcloud2()
+```
+
+## Trends
+
+```{r}
+bnames %>% 
+  filter(name == "Jacob") %>% 
+  ggplot(aes(x = year, y = n, color = sex)) +
+    geom_line()
+```
+
+1. Are names getting shorter?
+2. Are there common names between Males and Females?
+3. The propensity of names to become more gender neutral?
+4. Are names cyclical?
+
+
+## Question 1
+
+```{r}
+bnames_nb_chars <- bnames %>% 
+  mutate(nb_chars = nchar(name)) %>% 
+  group_by(year) %>% 
+  summarize(
+    nb_chars_mean = mean(nb_chars),
+    nb_chars_mean_wtd = sum(nb_chars*n)/sum(n),
+    nb_chars_median = median(nb_chars)
+  )
+bnames_nb_chars
+```
+
+```{r}
+bnames_nb_chars %>% 
+  ggplot(aes(x = year, y = nb_chars_mean)) +
+    geom_line() +
+    geom_line(aes(y = nb_chars_mean_wtd), linetype = 'dashed')
+```
+
+
+
+## Exploring Trends in Names
+
+One of the first things we want to do is to understand naming trends. Let us start by figuring out the top five most popular male and female names for this decade (born 2011 and later). Do you want to make any guesses? Go on, be a sport!!
+
+```{r}
+bnames_top5 = bnames %>%
+  filter(year > 2010) %>%
+  group_by(sex, name) %>%
+  summarize(nb_births = sum(n)) %>%
+  arrange(sex, -nb_births) %>%
+  top_n(5)
+bnames_top5
+```
+
+## Proportion of Births
+
+While the number of births is a useful metric, making comparisons across years becomes difficult, as one would have to control for population effects. One way around this is to normalize the number of births by the total number of births in that year.
+
+```{r}
+bnames2 <- bnames %>%
+  group_by(year) %>%
+  mutate(prop_births = n/sum(n))
+head(bnames2)
+```
+
+
+## Popularity of Names
+
+Now that we have the proportion of births, let us plot the popularity of a name through the years. How about plotting the popularity of the female names `Elizabeth`, and `Deneen`, and inspecting the underlying trends for any interesting patterns!
+
+```{r}
+# Load ggplot2 and set plot height
+library(ggplot2)
+# options(repr.plot.height = 3)
+
+# Function to plot trends by name and sex
+plot_trends <- function(name, sex){
+  bnames %>% 
+    filter(name == !!name) %>% 
+    filter(sex == !!sex) %>% 
+    ggplot(aes(x = year, y = n)) +
+      geom_line(group = 1) +
+      xlim(c(1880, 2016))
+}
+
+# Plot trends for Elizabeth and Deneen
+plot_trends("Elizabeth", "F") +
+      labs(title = 'Elizabeth')
+
+plot_trends("Deneen", "F") +
+      labs(title = 'Deneen')
+```
+
+## Trendy vs. Stable Names
+
+Based on the plots we created earlier, we can see that __Elizabeth__ is a fairly stable name, while __Deneen__ is not. An interesting question to ask would be what are the top 5 stable and top 5 trendiest names. A stable name is one whose proportion across years does not vary drastically, while a trendy name is one whose popularity peaks for a short period and then dies down. 
+
+There are many ways to measure trendiness. A simple measure would be to look at the maximum proportion of births for a name, normalized by the sume of proportion of births across years. For example, if the name `Joe` had the proportions `0.1, 0.2, 0.1, 0.1`, then the trendiness measure would be `0.2/(0.1 + 0.2 + 0.1 + 0.1)` which equals `0.5`.
+
+Let us use this idea to figure out the top 10 trendy names in this data set, with at least a 1000 births.
+
+```{r}
+top10_trendy_names <- bnames %>%
+  group_by(name, sex) %>%
+  summarize(
+    total = sum(n),
+    max = max(n),
+    trendiness = max/total
+  ) %>%
+  ungroup %>%
+  filter(total > 1000) %>%
+  arrange(-trendiness) %>%
+  head(10)
+top10_trendy_names
+```
+
+## Bring in Mortality Data
+
+So, what more is in a name? Well, with some further work, it is possible to predict the age of a person based on the name (Whoa! Really????). For this, we will need actuarial data that can tell us the chances that someone is still alive, based on when they were born. Fortunately, the [SSA](https://www.ssa.gov/) provides detailed [actuarial life tables](https://www.ssa.gov/oact/STATS/table4c6.html) by birth cohorts.
+
+
+| year| age|      qx|    lx|  dx|    Lx|      Tx|    ex|sex |
+|----:|---:|-------:|-----:|---:|-----:|-------:|-----:|:---|
+| 1910|  39| 0.00283| 78275| 222| 78164| 3129636| 39.98|F   |
+| 1910|  40| 0.00297| 78053| 232| 77937| 3051472| 39.09|F   |
+| 1910|  41| 0.00318| 77821| 248| 77697| 2973535| 38.21|F   |
+| 1910|  42| 0.00332| 77573| 257| 77444| 2895838| 37.33|F   |
+| 1910|  43| 0.00346| 77316| 268| 77182| 2818394| 36.45|F   |
+| 1910|  44| 0.00351| 77048| 270| 76913| 2741212| 35.58|F   |
+
+
+You can read the [documentation for the lifetables](https://www.ssa.gov/oact/NOTES/as120/LifeTables_Body.html) to understand what the different columns mean. The key column of interest to us is `lx`, which provides the number of people born in a `year` who live upto a given `age`. The probability of being alive can be derived as `lx` by 100,000. 
+
+Given that 2016 is the latest year in the baby names dataset, we are interested only in a subset of this data, that will help us answer the question, "What percentage of people born in Year X are still alive in 2016?" 
+
+Let us use this data and plot it to get a sense of the mortality distribution!
+
+
+```{r}
+# Read lifetables from datasets/lifetables.csv
+lifetables = readr::read_csv('../../data/lifetables.csv')
+
+# Extract subset relevant to those alive in 2020
+lifetables_2020 = filter(lifetables, year + age == 2020)
+
+# Plot the mortality distribution: year vs. lx
+ggplot(lifetables_2020, aes(x = year, y = lx/100000, color = sex)) +
+  geom_line()
+
+# Inspect lifetables_2020
+head(lifetables_2020)
+```
+
+## Smoothen the Curve!
+
+We are almost there. There is just one small glitch. The cohort life tables are provided only for every decade. In order to figure out the distribution of people alive, we need the probabilities for every year. One way to fill up the gaps in the data is to use some kind of interpolation. Let us keep things simple and use linear interpolation to fill out the gaps in values of `lx`, between the years `1900` and `2016`.
+
+```{r}
+years <- seq(1900, 2020, 1)
+lifetable_2020_s <- plyr::ddply(lifetables_2020, "sex", function(d){
+    f = splinefun(d$year, d$lx, method = 'hyman')
+    data.frame(
+      year = years,
+      lx = f(years),
+      sex = d$sex[1]
+    )
+  })
+
+ggplot(lifetable_2020_s, aes(x = year, y = lx, color = sex)) +
+  geom_line()
+```
+
+
+## Distribution of People Alive by Name
+
+Now that we have all the required data, we need a few helper functions to help us with our analysis. 
+
+The first function we will write is `get_data`,which takes `name` and `sex` as inputs and returns a data frame with the distribution of number of births and number of people alive by year.
+
+The second function is `plot_name` which accepts the same arguments as `get_data`, but returns a line plot of the distribution of number of births, overlaid by an area plot of the number alive by year.
+
+Using these functions, we will plot the distribution of births for boys named __Joseph__ and girls named __Brittany__.
+
+```{r}
+get_data <- function(name, sex){
+  name_sex <- bnames$name == name & bnames$sex == sex
+  data <- bnames[name_sex,] %>%
+    inner_join(lifetable_2020_s, by = c("sex", "year")) %>%
+    mutate(n_alive = lx/10^5*n)
+}
+
+plot_data <- function(name, sex){
+  dat <- get_data(name, sex)
+  ggplot(dat, aes(x = year)) +
+    geom_line(aes(y = n)) +
+    geom_area(aes(y = n_alive), fill = 'steelblue') +
+    xlim(1900, 2020) +
+    labs(
+      title = name
+    )
+}
+print(plot_data('Joseph', 'M'))
+print(plot_data('Brittany', 'F'))
+```
+
+## Estimate Age
+
+In this section, we want to figure out the probability that a person with a certain name is alive, as well as the quantiles of their age distribution. In particular, we will estimate the age of a female named __Gertrude__. Any guesses on how old a person with this name is? How about a male named __William__?
+
+```{r}
+# Function to estimate age quantiles
+estimate_age <- function(name, age){
+  dat <- get_data(name, age)
+  qtls = with(dat, Hmisc::wtd.quantile(year, weights = lx/10^5*n_alive))
+  h = data.frame(t(rev(2020 - qtls)))
+  names(h) <- paste0('q', seq(0, 100, by = 25))
+  h$p_alive = with(dat, round(sum(n_alive)/sum(n)*100, 1))
+  return(h)
+}
+
+# Estimate the age of Gertrude
+estimate_age('Aiden', 'M')
+```
+
+
+## Median Age of Top 10 Female Names
+
+In the previous section, we estimated the age of a female named Gertrude. Let's go one step further this time, and compute the 25th, 50th and 75th percentiles of age, and the probability of being alive for the top 10 most common female names of all time. This should give us some interesting insights on how these names stack up in terms of median ages!
+
+```{r}
+top_10_female_names <- bnames %>%
+  group_by(sex, name) %>%
+  summarize(nb_births = sum(n)) %>%
+  arrange(-nb_births) %>%
+  filter(sex == "F") %>%
+  head(10) %>%
+  group_by(name) %>%
+  summarize(
+    age = list(estimate_age(name, sex))
+  ) %>%
+  unnest() %>%
+  arrange(desc(q50))
+
+top_10_female_names
+```
+
+## Questions to Explore
+
+1. What are the most popular names by gender?
+2. What are the one-hit wonders of babynames?
+3. What are they trending baby names?
+4. Are there baby names that follow a cycle?
+5. How many babies have been named after GoT characters?
+6. What names are popular in one gender and switched over time?

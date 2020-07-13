@@ -204,14 +204,17 @@ We are almost there. There is just one small glitch. The cohort life tables are 
 
 ```{r}
 years <- seq(1900, 2020, 1)
-lifetable_2020_s <- plyr::ddply(lifetables_2020, "sex", function(d){
-    f = splinefun(d$year, d$lx, method = 'hyman')
+lifetable_2020_s <- lifetables_2020 %>% 
+  group_by(sex) %>% 
+  summarize(data = list({
+    f = splinefun(year, lx, method = 'hyman')
     data.frame(
       year = years,
       lx = f(years),
       sex = d$sex[1]
     )
-  })
+  })) %>% 
+  unnest()
 
 ggplot(lifetable_2020_s, aes(x = year, y = lx, color = sex)) +
   geom_line()

@@ -5,7 +5,6 @@ title: "Lecture 1 - Introduction"
 ```{r setup}
 library(tidyverse)
 library(wordcloud2)
-library(Hmisc)
 ```
 
 
@@ -31,7 +30,18 @@ head(bnames)
 ## Wordcloud
 
 ```{r}
-library(wordcloud2)
+bnames_summary <- bnames %>% 
+  filter(year >= 2010) %>% 
+  group_by(name, sex) %>% 
+  summarize(
+    nb_births = sum(n)
+  ) %>% 
+  arrange(sex, desc(nb_births)) %>% 
+  filter(sex == "M")
+bnames_summary
+```
+
+```{r}
 bnames_summary %>% 
   select(word = name, freq = nb_births) %>% 
   wordcloud2()

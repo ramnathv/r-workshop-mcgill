@@ -70,6 +70,8 @@ babynames %>%
   qplot(x = year, y = n, color = sex, data = ., geom = 'line')
 ```
 
+
+
 So if there is one advice I could give you about learning `ggplot2`, it would be
 to stop reading examples using `qplot` because it gives you the false impression
 that you have mastered the grammar, when in fact you have not. `qplot` provides
@@ -91,18 +93,6 @@ __Some Questions to Explore__
 ```{r}
 data(tips, package = 'reshape2')
 tips
-```
-
-
-```{r plot-tips}
-# YOUR CODE -----
-
-
-
-
-
-
-
 ```
 
 
@@ -136,13 +126,20 @@ the display.
 
 > How many layers does this plot have?
 
+There are three layers in this plot. A `point` layer, a `line` layer and a
+`ribbon` layer. Let us start by defining the first layer, `point_layer`.
+`ggplot2` allows you to translate the `layer` exactly as you see it in terms of
+the constituent elements. The syntax being used might seem very verbose when
+compared to `qplot`, but I recommend some patience, since the rewards you reap
+by understanding the grammar are worth the trouble.
 
 ```{r layer1}
-
-
-
-
-
+layer_point <- geom_point(
+  mapping = aes(x = total_bill, y = tip, color = sex),
+  data = tips
+)
+ggplot() + 
+  layer_point
 ```
 
 That was easy! Wasn't it? Let us move on to the second layer. It is a
@@ -156,24 +153,34 @@ in handy later. Note that we combine the `total_bill` column with the predicted
 estimates so that we can keep the `x` and `y` values in sync.
 
 ```{r}
+# Fit a linear regression model
+linear_reg <- lm(tip ~ total_bill, data = tips)
+# Collect the fitted values and the prediction confidence interval
+tip_preds <- as.data.frame(predict(linear_reg, interval = 'confidence'))
+tip_pred <- tip_preds$fit
+lwr <- tip_preds$lwr
+upr <- tip_preds$upr
 
+tips_2 <- tips %>% 
+  mutate(tip_pred = tip_pred) %>% 
+  mutate(lwr = lwr) %>% 
+  mutate(upr = upr)
 
-
-
-
-
+tips_2
 ```
 
 Now it is time to define our second layer, since we have the data required to do
 so.
 
 ```{r layer2}
-
-
-
-
-
-
+layer_line <- geom_line(
+  mapping = aes(x = total_bill, y = tip_pred),
+  data = tips_2,
+  color = "darkred"
+)
+ggplot() + 
+  layer_point + 
+  layer_line
 ```
 
 That was fun right! Now, let me see if you have been able to grasp the idea of
@@ -191,13 +198,16 @@ provide them correctly in the `mapping` argument.
 __Solution 1__
 
 ```{r layer3}
-# YOUR CODE -----
-
-
-
-
-
-
+layer_ribbon <- geom_ribbon(
+  mapping = aes(x = total_bill, ymin = lwr, ymax = upr),
+  data = tips_2,
+  # we use alpha to control transparency of the ribbon
+  alpha = 0.3
+)
+ggplot() + 
+  layer_point + 
+  layer_line + 
+  layer_ribbon
 ```
 
 
@@ -212,14 +222,15 @@ as input, and automatically does the statistical transformations in the
 background. So, we can define the combined line and ribbon layers as:
 
 ```{r layer4}
-# YOUR CODE ----
-
-
-
-
-
-
-
+layer_smooth <- geom_line(
+  mapping = aes(x = total_bill, y = tip),
+  data = tips,
+  stat = "smooth",
+  method = "lm"
+)
+ggplot() + 
+  layer_point + 
+  layer_smooth
 ```
 
 That was better wasn't it. But wait a minute, there is still a lot of repitition
@@ -249,14 +260,29 @@ datasets `economics` and `presidential` from `ggplot2`. Start by thinking
 about the layers in the plot, the aesthetic mappings, and the geometries.
 
 ![replicate-plot](../../assets/replicate-plot.png)
+
+```{r}
+economics
+presidential
+```
+
 ```{r econ-presidential}
 # YOUR CODE -----
+layer_line <- geom_line(
+  data = economics,
+  mapping = aes(x = date, y = uempmed)
+)
+layer_rect <- geom_rect(
+  data = presidential,
+  mapping = aes(xmin = start, xmax = end, ymin = 0, ymax = 30, fill = party),
+  alpha = 0.3
+)
 
 
 
-
-
-
+ggplot() +
+  layer_rect + 
+  layer_line
 ```
 
 ## Faceting
@@ -299,15 +325,6 @@ __Geometries__
 4. `geom_histogram`
 5. `geom_boxplot`
 
-__Scales__
-
-
-
-__Theme__
-
-
-
-
 
 ## Recreate Plots
 
@@ -317,10 +334,12 @@ Plot trends for the top 10 female namess
 
 ![plot-top-names](../../assets/plot-top-names.png)
 
+__Solution 4__
 
 ```{r}
+library(babynames)
 top_10_names <- babynames %>% 
-  filter(sex == "F") %>% 
+  filter(sex == 'F') %>% 
   group_by(name) %>% 
   summarize(n = sum(n)) %>% 
   top_n(10) %>% 
@@ -334,16 +353,6 @@ babynames %>%
 ```
 
 
-```{r}
-# YOUR CODE -------
-
-
-
-
-
-```
-
-
 __Exercise 5__
 
 Plot trends for the name "Sarah" along with trends for other names in the
@@ -351,14 +360,13 @@ top 10, faded in gray.
 
 ![plot-top-names-2](../../assets/plot-top-names-2.png)
 
-
 ```{r}
-# YOUR CODE  -----
-
-
-
-
-
-
+babynames %>% 
+  filter(sex == 'F') %>% 
+  filter(name %in% top_10_names) %>% 
+  mutate(highlight = ifelse(name == 'Sarah', 'Sarah', 'Others')) %>% 
+  ggplot(aes(x = year, y = n, group = name, color = highlight)) +
+  geom_line() +
+  scale_color_manual(values = c('gray', 'blue'))
 ```
 

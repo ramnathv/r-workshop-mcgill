@@ -1,0 +1,260 @@
+---
+title: "Manipulating Data"
+author: Ramnath Vaidyanathan
+---
+
+```{r setup}
+library(tidyverse)
+```
+
+
+![data-science-workflow](https://ohi-science.org/data-science-training/img/r4ds_data-science.png)
+
+
+> The best way to learn how to manipulate data is to start with a dataset of interest and work your way through interesting questions. 
+
+We will use the `babynames` dataset to explore a set of interesting questions.
+
+```{r}
+bnames <- read_csv('../../data/babynames.csv.gz')
+bnames
+```
+
+
+1. What are the most common starting and ending letters?
+2. What are the most common unisex names?
+3. What are the most consistent vs. trendy names?
+4. What is the average length of a name by year?
+5. How many babies have been named after GoT characters?
+6. What names are popular in one gender and switched over time?
+
+```{r}
+bnames_french <- read_csv('../../data/babynames_french.csv.gz')
+bnames_french
+```
+
+
+```{r}
+write.csv(bnames_french, file = gzfile('../../data/babynames_french.csv.gz'), row.names = FALSE)
+```
+
+
+1. Bottom-Up: ABC, Words, Sentences ...
+   
+2. Top-Down: Write a book -> 
+
+We will use the `babynames` dataset to explore a set of interesting questions.
+
+```{r}
+bnames <- read_csv('../../data/babynames.csv.gz')
+bnames
+```
+
+## Tidy Data
+
+1. Each row is an OBSERVATION (CASE, SAMPLE, EXAMPLE)
+2. Each column is a VARIABLE (FEATURE)
+
+## Manipulating Tidy Data
+
+__Manipulate Rows__
+
+1. Filter
+2. Sorting
+
+__Manipulating Columns__
+
+1. Select
+
+__Summarizing Data__
+
+Verbs
+
+__Rows__
+
+1. filter
+2. arrange
+
+__Columns__
+
+3. select
+4. mutate
+
+__Group__
+
+1. group_by
+2. summarize
+
+```{r}
+bnames
+```
+
+
+## What are the most common unisex names?
+
+Venn Diagram
+- Male
+- Female
+- Male & Female
+
+1. [x] Group by name, sex
+2. [x] Aggregate (count, sum)
+3. [x] Calculate the pct of Males
+4. [ ] 
+
+> A name is considered unisex if there are at least 45% male and 45% female.
+
+```{r}
+PCT_THRESHOLD <- 0.49
+bnames %>% 
+  group_by(name, sex) %>% 
+  summarize(nb_births = sum(n)) %>% 
+  group_by(name) %>% 
+  mutate(
+    pct = nb_births / sum(nb_births),
+    nb_births_total = sum(nb_births)
+  ) %>% 
+  # Remove all names that are ALL male or female
+  filter(pct != 1) %>% 
+  # Sort in decreasing order of total births by name
+  arrange(desc(nb_births_total)) %>% 
+  filter(sex == 'M') %>% 
+  filter(pct >= PCT_THRESHOLD, pct <= 1- PCT_THRESHOLD)
+```
+
+## What are the most common starting and ending letters?
+
+Male: M / R / S
+Female: A / J / F
+
+1. [ ] Extract the first and last letters of every name
+2. [ ]
+3.
+4. 
+
+```{r}
+stringr::str_sub('Michael', 1, 1)
+```
+
+
+```{r}
+bnames %>% 
+  # filter(year >= 2000) %>% 
+  mutate(
+    first_letter = stringr::str_sub(name, 1, 1)
+  ) %>% 
+  group_by(first_letter, sex) %>% 
+  summarize(
+    nb_births = sum(n)
+  ) %>% 
+  ggplot(aes(x = first_letter, y = nb_births)) +
+  geom_col() +
+  facet_wrap(~ sex, ncol = 1) +
+  scale_y_continuous(labels = scales::unit_format(scale = 1e-6, unit = 'M')) +
+  labs(
+    x = 'First Letter',
+    y = 'Number of Births',
+    title = 'Most Common First Letters',
+    caption = 'Source: Babynames Data from SSA US'
+  )
+```
+
+# What is the trend of names starting with A / M?
+
+```{r}
+bnames %>% 
+  mutate(
+    first_letter = stringr::str_sub(name, 1, 1)
+  ) %>% 
+  group_by(first_letter, year, sex) %>% 
+  summarize(nb_births = sum(n)) %>% 
+  group_by(year, sex) %>% 
+  mutate(pct_births = nb_births / sum(nb_births)) %>% 
+  filter(first_letter == 'J') %>% 
+  ggplot(aes(x = year, y = pct_births, color = sex)) +
+  geom_line()
+```
+
+## What are the most consistent vs. trendy names?
+
+## Figure out name lengths.
+
+Are names becoming longer or shorter?
+
+```{r}
+bnames_french <- read_csv('../../data/babynames_french.csv.gz') %>% 
+  rename(n = count)
+bnames_french
+```
+
+```{r}
+bnames %>% 
+  mutate(nb_chars = nchar(name)) %>% 
+  group_by(year, sex) %>% 
+  summarize(
+    wtd_avg_nb_chars = sum(nb_chars * n) / sum(n)
+  ) %>% 
+  ggplot(aes(x = year, y = wtd_avg_nb_chars, color = sex)) +
+  geom_line() +
+  geom_vline(xintercept = 1990, linetype = 'dotted')
+bnames_french %>% 
+  mutate(nb_chars = nchar(name)) %>% 
+  group_by(year, sex) %>% 
+  summarize(
+    wtd_avg_nb_chars = sum(nb_chars * n) / sum(n)
+  ) %>% 
+  ggplot(aes(x = year, y = wtd_avg_nb_chars, color = sex)) +
+  geom_line() +
+  geom_vline(xintercept = 1958, linetype = 'dotted')
+```
+
+|year | sex | {nb_chars}
+
+## What names are popular in one gender and switched over time?
+
+```{r}
+bnames %>% 
+  filter(name == 'Jordan') %>% 
+  ggplot(aes(x = year, y = n, color = sex)) +
+  geom_line()
+```
+
+
+```{r}
+RATIO_THRESHOLD <- 3
+bnames %>% 
+  group_by(name) %>% 
+  pivot_wider(names_from = sex, values_from = n) %>% 
+  mutate(nb_births_total = `M` + `F`) %>% 
+  mutate(ratio_m_to_f = `M` / `F`) %>% 
+  filter(min(ratio_m_to_f) < 1/RATIO_THRESHOLD, max(ratio_m_to_f) > RATIO_THRESHOLD) %>% 
+  arrange(desc(nb_births_total))
+  filter(name == "Leslie") %>% 
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = M), color = 'blue') +
+  geom_line(aes(y = `F`), color = 'darkgreen')
+```
+
+| name | year | M | F |
+
+```{r}
+babynames %>% 
+  select(-prop) %>% 
+  group_by(name) %>% 
+  pivot_wider(names_from = sex, values_from = n) %>% 
+  mutate(n = `M` + `F`) %>% 
+  mutate(alpha = `M` / `F`) %>% 
+  filter(min(alpha) < 1/5, max(alpha) > 5) %>% 
+  filter(name == "Leslie") %>% 
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = M)) +
+  geom_line(aes(y = `F`))
+```
+```
+
+
+## Are names composed by two words (space in text).
+   - How do we know if it is two or more word? (look for spaces, hyphens)
+   
+4. What is the average length of a name by year?
+5. How many babies have been named after GoT characters?

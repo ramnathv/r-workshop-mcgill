@@ -20,7 +20,6 @@ if (requireNamespace('rstudioapi', quietly = TRUE)){
 
 Every Shiny App has a UI and a Server.
 
-
 ```{r}
 ui <- fluidPage(
   
@@ -41,19 +40,17 @@ Let us build a Hello World App from scratch
 ```{r}
 ui <- fluidPage(
   # 1. Add a `titlePanel()` to display title
-  titlePanel('Hello World App'),
+
   # 2. Add a `textInput()` to let user enter name
-  textInput(inputId = 'name', label = 'Enter your name'),
+
   # 3. Add `textOutput()` to display greeting
-  textOutput('greeting')
+
 )
 
 server <- function(input, output, session) {
   # 4. Render text output using `renderText()` and
   # 5. Assign it to output greeting
-  output$greeting <- renderText({
-    paste("Hello,", input$name)
-  })
+
 }
 
 shinyApp(ui, server)
@@ -95,7 +92,7 @@ quickly explore different input types.
 ```{r}
 ui <- fluidPage(
   # Add a text input to get name
-  textInput(inputId = 'name', label = 'Enter your name')
+  
 )
 server <- function(input, output, session) {
 
@@ -110,12 +107,7 @@ shinyApp(ui, server)
 ```{r}
 ui <- fluidPage(
   # Add a select input to choose an animal from cat, dog, and cow
-  selectInput(
-    inputId = 'animal',
-    label = 'Select your favorite animal',
-    choices = c('cat', 'dog', 'cow'),
-    selected = 'cow'
-  )
+
 )
 server <- function(input, output, session) {
 
@@ -128,22 +120,6 @@ Modify the app you just created to let the user select multiple items.
 
 ![select-input-multiple](../../assets/select-input-multiple.png)
 
-```{r}
-ui <- fluidPage(
-  # Add a select input to choose an animal from cat, dog, and cow
-  selectInput(
-    inputId = 'animal',
-    label = 'Select your favorite animal',
-    choices = c('cat', 'dog', 'cow'),
-    multiple = TRUE
-  )
-)
-server <- function(input, output, session) {
-
-}
-shinyApp(ui, server)
-```
-
 ### Numeric
 
 #### `numericInput`
@@ -153,14 +129,7 @@ shinyApp(ui, server)
 ```{r}
 ui <- fluidPage(
   # Add a numeric input to let user pick a number from 0 to 10
-  numericInput(
-    inputId = 'number', 
-    label = 'Select Number', 
-    min = 0, 
-    max = 10, 
-    value = 10,
-    step = 2
-  )
+  
 )
 server <- function(input, output, session) {
   
@@ -177,14 +146,7 @@ shinyApp(ui, server)
 ```{r}
 ui <- fluidPage(
   # Add a slider input to select a year between 1900 and 2000
-  sliderInput(
-    inputId = 'number', 
-    label = 'Select Number', 
-    min = 1900, 
-    max = 2000, 
-    value = 1925,
-    step = 5
-  )
+  
 )
 server <- function(input, output, session){
   
@@ -201,13 +163,7 @@ shinyApp(ui, server)
 ```{r}
 ui <- fluidPage(
   # Add a date input to let user select a date between 2000 and 2020
-  dateInput(
-    inputId = 'date',
-    label = 'Select Date',
-    min = '2000-01-01',
-    max = '2021-01-01',
-    value = Sys.Date()
-  ) 
+  
 )
 server <- function(input, output, session) {
 
@@ -286,10 +242,9 @@ head(babynames)
 
 ```{r}
 ui <- fluidPage(
-  titlePanel('Static Table'),
-  numericInput('nb_rows', label = 'Enter number of rows', 6, min = 0, max = 100),
+  titlePanel('Static Table')
   # 4. Display table using `tableOutput()`
-  tableOutput("table")
+  
 )
 
 server <- function(input, output, session){
@@ -297,9 +252,7 @@ server <- function(input, output, session){
   # 3. Assign it to `output$table`
   
   # 1. Write code to output first six rows of the babynames dataset
-  output$table <- renderTable({
-    head(babynames, input$nb_rows) 
-  })
+ 
 }
 
 shinyApp(ui, server)
@@ -313,16 +266,14 @@ shinyApp(ui, server)
 ```{r}
 ui <- fluidPage(
   # 4. Display interactive table using `DTOutput()`
-  DTOutput('table')
+
 )
 server <- function(input, output, session){
   # 1. Write code to output all rows of the babynames dataset,
   # 2. Render interactive table using `renderDT()`, and 
   # 3. Assign it to `output$table`
-  output$table <- renderDT({
-    head(babynames, 1000)
-  })
- 
+
+
 
 
 }
@@ -337,39 +288,17 @@ shinyApp(ui, server)
 ![plot-output](../../assets/plot-output.png)
 
 ```{r}
-library(babynames)
-top_names <- babynames %>% 
-  group_by(name) %>% 
-  summarize(n = sum(n)) %>% 
-  top_n(100) %>% 
-  pull(name)
-top_names
-```
-
-```{r}
-library(shinyWidgets)
 ui <- fluidPage(
   # 4. Display plot using `plotOutput()`
-  pickerInput(
-    'name', 
-    'Enter Name', 
-    choices = top_names,
-    options = list(`live-search` = TRUE)
-  ),
-  plotOutput('plot')
+  
 )
 server <- function(input, output, session){
   # 1. Write code to create a line plot of n vs year colored by sex for name Richard
   # 2. Render plot using `renderPlot()` and 
   # 3. Assign it to `output$plot`
-  output$plot <- renderPlot({
-    input_name = input$name
-    req(input_name)
-    babynames %>% 
-      filter(name == input_name) %>% 
-      ggplot(aes(x = year, y = n, color = sex)) +
-      geom_line()
-  })
+
+  
+
 
 }
 shinyApp(ui, server)
@@ -385,29 +314,7 @@ interactive by using `plotlyOutput` and `renderPlotly()`
 
 ```{r}
 library(plotly)
-library(shinyWidgets)
-ui <- fluidPage(
-  # 4. Display plot using `plotOutput()`
-  pickerInput(
-    'name', 
-    'Enter Name', 
-    choices = top_names,
-    options = list(`live-search` = TRUE)
-  ),
-  plotlyOutput('plot')
-)
-server <- function(input, output, session){
-  output$plot <- renderPlotly({
-    input_name = input$name
-    req(input_name)
-    babynames %>% 
-      filter(name == input_name) %>% 
-      ggplot(aes(x = year, y = n, color = sex)) +
-      geom_line()
-  })
 
-}
-shinyApp(ui, server)
 ```
 
 
@@ -501,24 +408,9 @@ by:
 4.  Display the output in the UI using `DTOutput()`.
 
 ```{r}
-ui <- fluidPage(
-  titlePanel('Plot'),
-  plotOutput('plot'),
-  DTOutput('table')
-)
-server <- function(input, output, session){
-  output$plot <- renderPlot({
-    babynames %>% 
-      filter(name == "Richard") %>% 
-      ggplot(aes(x = year, y = n, color = sex)) +
-      geom_line()
-  })
-  output$table <- renderDT({
-     babynames %>% 
-      filter(name == "Richard")
-  })
-}
-shinyApp(ui, server)
+
+
+
 ```
 
 🎉 Awesome! You are beginning to now get the hang of reactivity and how to build
@@ -549,26 +441,9 @@ modifications.
 2. Access the filtered data in the outputs as `rval_names()`.
 
 ```{r}
-ui <- fluidPage(
-  titlePanel('Plot'),
-  plotOutput('plot'),
-  DTOutput('table')
-)
-server <- function(input, output, session){
-  rval_names <- reactive({
-    babynames %>% 
-      filter(name == "Richard")
-  })
-  output$plot <- renderPlot({
-     rval_names() %>% 
-      ggplot(aes(x = year, y = n, color = sex)) +
-      geom_line()
-  })
-  output$table <- renderDT({
-     rval_names()
-  })
-}
-shinyApp(ui, server)
+
+
+
 ```
 
 Reactive expressions allow encapsulation of repeated computations leading to
@@ -705,31 +580,25 @@ Modify it to:
 
 ```{r}
 ui <- fluidPage(
-  titlePanel("Plot"),
-  sidebarLayout(
-    sidebarPanel(
-      textInput("name", "Enter Name")
-    ),
-    mainPanel(
-      plotOutput("plot"),
-      DTOutput("table")
-    )
-  )
+  titlePanel("Baby Names Explorer"),
+  textInput('name', 'Enter Name'),
+  plotOutput('plot'),
+  DT::DTOutput('table')
 )
-server <- function(input, output, session){
+
+server <- function(input, output, session) {
   rval_names <- reactive({
-    input_name = input$name
-    req(input_name)
+    user_name <- input$name
     babynames %>% 
-      filter(name == input_name)
+      filter(name == user_name)
   })
   output$plot <- renderPlot({
-     rval_names() %>% 
+    rval_names() %>% 
       ggplot(aes(x = year, y = n, color = sex)) +
       geom_line()
   })
-  output$table <- renderDT({
-     rval_names()
+  output$table <- DT::renderDT({
+    rval_names()
   })
 }
 shinyApp(ui, server)
@@ -771,37 +640,9 @@ the example code above.
 2. Wrap each output in a `tabPanel()`.
 
 ```{r}
-ui <- fluidPage(
-  titlePanel("Plot"),
-  sidebarLayout(
-    sidebarPanel(
-      textInput("name", "Enter Name")
-    ),
-    mainPanel(
-      tabsetPanel(
-        tabPanel('Plot', plotOutput("plot")),
-        tabPanel('Table', DTOutput("table"))
-      )
-    )
-  )
-)
-server <- function(input, output, session){
-  rval_names <- reactive({
-    input_name = input$name
-    req(input_name)
-    babynames %>% 
-      filter(name == input_name)
-  })
-  output$plot <- renderPlot({
-     rval_names() %>% 
-      ggplot(aes(x = year, y = n, color = sex)) +
-      geom_line()
-  })
-  output$table <- renderDT({
-     rval_names()
-  })
-}
-shinyApp(ui, server)
+
+
+
 ```
 
 
@@ -820,38 +661,7 @@ different themes by adding `shinythemes::themeSelector()` to the UI. Once you
 settle on a theme you like, add the `theme` to the UI.
 
 ```{r}
-ui <- fluidPage(
-  titlePanel("Plot"),
-  theme = shinythemes::shinytheme('paper'),
-  sidebarLayout(
-    sidebarPanel(
-      textInput("name", "Enter Name")
-    ),
-    mainPanel(
-      tabsetPanel(
-        tabPanel('Plot', plotOutput("plot")),
-        tabPanel('Table', DTOutput("table"))
-      )
-    )
-  )
-)
-server <- function(input, output, session){
-  rval_names <- reactive({
-    input_name = input$name
-    req(input_name)
-    babynames %>% 
-      filter(name == input_name)
-  })
-  output$plot <- renderPlot({
-     rval_names() %>% 
-      ggplot(aes(x = year, y = n, color = sex)) +
-      geom_line()
-  })
-  output$table <- renderDT({
-     rval_names()
-  })
-}
-shinyApp(ui, server)
+
 
 
 ```
@@ -887,7 +697,7 @@ artworks_subset
 ```{r}
 artworks_subset %>% 
   count(artist, sort = TRUE) %>%
-  mutate(artist = fct_reorder(artist, n)) %>% 
+  mutate(artist = forcats::fct_reorder(artist, n)) %>% 
   head(10) %>% 
   ggplot(aes(x = n, y = artist)) +
   geom_col() +
@@ -918,7 +728,7 @@ artworks_subset %>%
 ```{r}
 artworks_subset %>% 
   ggplot(aes(xmin = 0, ymin = 0, xmax = width_cm, ymax = height_cm)) +
-  geom_rect(alpha = 0.1) +
+  geom_rect(alpha = 0.5) +
   labs(
     title = 'Distribution of Width vs. Height',
     subtitle = 'Painting',
@@ -935,29 +745,18 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       # Add select input to select classification
-      selectInput(
-        inputId = 'group', 
-        label = 'Select Classification', 
-        choices = unique(artworks$classification)
-      ),
+      
       # Add date range input to select date range
-      dateRangeInput(
-        inputId = 'date_range',
-        label = 'Enter Date Range',
-        min = min(artworks$date),
-        max = max(artworks$date),
-        start = "1980-01-01",
-        end = "2010-01-01"
-      )
+      
     ),
     mainPanel(
       tabsetPanel(
         # Add tabPanel with an interactive table of filtered artworks
-        tabPanel('Artworks', DTOutput('table_artworks_filtered', height = 500)),
+        
         # Add tabPanel with a plot of top 10 artists
-        tabPanel('Top 10 Artists', plotOutput('plot_top_10_artists')),
+        
         # Add tabPanel with a plot of width vs. height
-        tabPanel('Dimensions', plotOutput('plot_dimensions'))
+
       )
     )
   )
@@ -965,22 +764,11 @@ ui <- fluidPage(
 )
 server <- function(input, output, session) {
   # Add a reactive expression to filter artworks
-  artworks_filtered <- reactive({
-    input_classification = input$group
-    input_date_min = input$date_range[1]
-    input_date_max = input$date_range[2]
-    artworks %>% 
-     filter(!is.na(artist)) %>% 
-     filter(date_acquired >= '2010-01-01') %>% 
-     filter(date_acquired <= '2020-01-01') %>% 
-     filter(classification == 'Painting')
-  })
+  
   
   # Render an interactive table of filtered artworks:
   # Columns to include: title, artist, thumbnail_url as an image
-  output$table_artworks_filtered <- renderDT({
-    artworks_filtered()
-  })
+  
 
   
   # Render a plot of top 10 artists

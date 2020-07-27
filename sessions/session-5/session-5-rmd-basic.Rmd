@@ -1,0 +1,51 @@
+---
+title: "Basic Rmarkdown Document"
+author: "Ramnath Vaidyanathan"
+date: "7/27/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+1. Metadata (YAML Front Matter)
+2. Text
+3. Code
+4. Output
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+1. Item 1
+2. Item 2
+
+> This is a quote
+
+```{r cars}
+linear_reg <- lm(mpg ~ wt + gear, data = mtcars)
+summary(linear_reg)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+library(ggplot2)
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{python}
+x = [1, 2, 3, 4, 5]
+[x**2 for x in x]
+```
+

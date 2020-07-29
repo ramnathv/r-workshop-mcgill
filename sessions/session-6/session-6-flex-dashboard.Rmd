@@ -1,0 +1,36 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    storyboard: true
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(babynames)
+library(tidyverse)
+```
+
+### Top 10 Female Names
+
+```{r}
+babynames %>% 
+  filter(sex == 'F') %>% 
+  group_by(name) %>% 
+  summarize(n = sum(n)) %>% 
+  top_n(10) %>% 
+  mutate(name = fct_reorder(name, n)) %>% 
+  ggplot(aes(x = n, y = name)) +
+  geom_col()
+```
+
+### Frame 2
+
+```{r}
+```
+
+### Frame 3
+
+```{r}
+```

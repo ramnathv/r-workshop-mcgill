@@ -5,6 +5,7 @@ author: Ramnath Vaidyanathan
 
 ```{r setup}
 library(tidyverse)
+knitr::opts_chunk$set(dpi = 300, dev = 'svg')
 ```
 
 
@@ -137,7 +138,7 @@ stringr::str_sub('Michael', 1, 1)
 ```
 
 
-```{r}
+```{r dev = 'svg'}
 bnames %>% 
   # filter(year >= 2000) %>% 
   mutate(

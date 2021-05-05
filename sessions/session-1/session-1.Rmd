@@ -5,6 +5,7 @@ title: "Lecture 1 - Introduction"
 ```{r setup}
 library(tidyverse)
 library(wordcloud2)
+knitr::opts_chunk$set(fig.dpi = 300)
 ```
 
 
@@ -115,7 +116,7 @@ head(bnames2)
 
 Now that we have the proportion of births, let us plot the popularity of a name through the years. How about plotting the popularity of the female names `Elizabeth`, and `Deneen`, and inspecting the underlying trends for any interesting patterns!
 
-```{r}
+```{r fig.dpi = 300}
 # Load ggplot2 and set plot height
 library(ggplot2)
 # options(repr.plot.height = 3)
@@ -210,8 +211,7 @@ lifetable_2020_s <- lifetables_2020 %>%
     f = splinefun(year, lx, method = 'hyman')
     data.frame(
       year = years,
-      lx = f(years),
-      sex = d$sex[1]
+      lx = f(years)
     )
   })) %>% 
   unnest()
